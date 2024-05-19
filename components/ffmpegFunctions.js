@@ -18,15 +18,18 @@ export function extractAllAudioAndSubtitles(videoPath, outputPath) {
 
       const tasks = [];
 
-      // Extracting audio streams
+      /// Extracting audio streams
       audioStreams.forEach((_audioStream, index) => {
         // Sanitize the file name
-        const outputAudioPath = path.join(outputPath, `audio_${index + 1}.mp3`);
+        const outputAudioPath = path.join(outputPath, `audio_${index + 1}.aac`);
         tasks.push(
           new Promise((res, rej) => {
             ffmpeg(videoPath)
               .output(outputAudioPath)
-              .outputOptions([`-map 0:a:${index}`, "-c:a", "libmp3lame"])
+              .audioCodec("aac") // Use AAC codec
+              .audioBitrate("32k") // Lower bitrate for smaller file size
+              .audioChannels(2) // Set number of audio channels
+              .outputOptions([`-map 0:a:${index}`]) // Include only audio streams
               .on("progress", (progress) => {
                 console.log(`Extracting audio ${index}: ${progress.percent}%`);
               })

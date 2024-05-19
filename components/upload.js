@@ -1,8 +1,7 @@
-// upload.js
 import { promises as fs } from "fs";
 import { b2, bucketName } from "./config.js";
-
-async function uploadFile(file, fileName) {
+import path from "path";
+async function uploadFile(filePath, fileName) {
   try {
     // Authorize with B2
     await b2.authorize();
@@ -17,7 +16,7 @@ async function uploadFile(file, fileName) {
     const authToken = response.data.authorizationToken;
 
     // Read file data
-    const fileData = await fs.readFile(file.path);
+    const fileData = await fs.readFile(filePath);
 
     // Upload file to Backblaze B2
     const uploadResult = await b2.uploadFile({
@@ -28,12 +27,33 @@ async function uploadFile(file, fileName) {
     });
 
     // Cleanup local file asynchronously
-    await fs.unlink(file.path);
+    await fs.unlink(filePath);
 
-    return uploadResult.data;
+    return {
+      fileName,
+      url: `https://f002.backblazeb2.com/file/${bucketName}/${fileName}`,
+      ...uploadResult.data,
+    };
   } catch (error) {
     throw error;
   }
 }
 
-export { uploadFile };
+async function uploadFolder(folderPath) {
+  try {
+    const files = await fs.readdir(folderPath);
+    const uploadResults = [];
+
+    for (const file of files) {
+      const filePath = path.join(folderPath, file);
+      const uploadResult = await uploadFile(filePath, file);
+      uploadResults.push(uploadResult);
+    }
+
+    return uploadResults;
+  } catch (error) {
+    throw error;
+  }
+}
+
+export { uploadFile, uploadFolder };

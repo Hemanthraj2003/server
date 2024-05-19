@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { extractAllAudioAndSubtitles } from "./ffmpegFunctions.js";
-// import { uploadFile } from "./upload.js";
+import { uploadFolder } from "./upload.js";
 
 const upload = multer({ dest: "uploads/" });
 const router = express.Router();
@@ -33,22 +33,13 @@ router.post("/upload", upload.single("video"), async (req, res) => {
       outputPath
     );
 
-    // Send response with extracted files details
+    //upload all extracted files in the directory
+    const uploadResults = await uploadFolder(outputPath);
+    const uploadedUrls = uploadResults.map((result) => result.url);
     res.status(200).json({
-      audio: extractionResult.audio,
-      subtitles: extractionResult.subtitles,
-      video: extractionResult.video,
+      extractionResult,
+      uploadedFiles: uploadedUrls,
     });
-
-    // Upload file
-    // const uploadDetails = await uploadFile(file, fileName);
-
-    // Send response with uploaded file details
-    // res.status(200).json({
-    //   url: `https://f002.backblazeb2.com/file/${bucketName}/${fileName}`,
-    //   fileId: uploadDetails.fileId,
-    //   fileName: uploadDetails.fileName,
-    // });
   } catch (error) {
     console.error(error);
     res
